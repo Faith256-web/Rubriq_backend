@@ -1,0 +1,64 @@
+{
+    "info": {
+        "name": "Rubriq Africa API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Signup",
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "url": {"raw": "http://localhost:5000/api/user/signup", "host": ["http", "localhost", "5000"], "path": ["api", "user", "signup"]},
+                        "body": {"mode": "raw", "raw": "{\"name\":\"Test User\", \"phone\":\"0712345678\", \"email\":\"test@example.com\", \"password\":\"password123\"}"}
+                    }
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "url": {"raw": "http://localhost:5000/api/user/login", "host": ["http", "localhost", "5000"], "path": ["api", "user", "login"]},
+                        "body": {"mode": "raw", "raw": "{\"phone\":\"0712345678\", \"password\":\"password123\"}"}
+                    }
+                },
+                {
+                    "name": "Get Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                        "url": {"raw": "http://localhost:5000/api/user/profile", "host": ["http", "localhost", "5000"], "path": ["api", "user", "profile"]}
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Products",
+            "item": [
+                {
+                    "name": "Get All Products",
+                    "request": {
+                        "method": "GET",
+                        "url": {"raw": "http://localhost:5000/api/product/products", "host": ["http", "localhost", "5000"], "path": ["api", "product", "products"]}
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Orders",
+            "item": [
+                {
+                    "name": "Place Order",
+                    "request": {
+                        "method": "POST",
+                        "header": [{"key": "Content-Type", "value": "application/json"}],
+                        "url": {"raw": "http://localhost:5000/api/order/place-order", "host": ["http", "localhost", "5000"], "path": ["api", "order", "place-order"]}
+                    }
+                }
+            ]
+        }
+    ]
+}

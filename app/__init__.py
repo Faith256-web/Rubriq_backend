@@ -1,0 +1,310 @@
+from flask import Flask, send_from_directory
+from flask_cors import CORS
+from datetime import timedelta
+from flask_mail import Mail
+# from .user_model import User
+import os
+
+from app.extensions import db, migrate, bcrypt, jwt, mail
+
+mail = Mail()
+
+
+def create_app():
+    app = Flask(__name__)
+
+    # CONFIGURATION
+    app.config.from_object("config.Config")
+
+    app.config["SECRET_KEY"] = os.getenv(
+        "SECRET_KEY",
+        "super-secret-key"
+    )
+
+    app.config["JWT_SECRET_KEY"] = os.getenv(
+        "JWT_SECRET_KEY",
+        "super-secret-jwt-key"
+    )
+
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=60)
+    app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
+
+    # CORS
+    CORS(app, supports_credentials=True)
+
+    # FILE UPLOADS
+    upload_folder = os.path.join(
+        app.root_path,
+        "static",
+        "uploads"
+    )
+
+    os.makedirs(upload_folder, exist_ok=True)
+
+    app.config["UPLOAD_FOLDER"] = upload_folder
+
+    # MAIL CONFIG
+    app.config["MAIL_SERVER"] = os.getenv(
+        "SMTP_SERVER",
+        "smtp.gmail.com"
+    )
+
+    app.config["MAIL_PORT"] = int(
+        os.getenv("SMTP_PORT", 587)
+    )
+
+    app.config["MAIL_USE_TLS"] = True
+
+    app.config["MAIL_USERNAME"] = os.getenv(
+        "SMTP_USERNAME"
+    )
+
+    app.config["MAIL_PASSWORD"] = os.getenv(
+        "SMTP_PASSWORD"
+    )
+
+    app.config["MAIL_DEFAULT_SENDER"] = os.getenv(
+        "SMTP_USERNAME"
+    )
+
+    # INITIALIZE EXTENSIONS
+    db.init_app(app)
+    migrate.init_app(app, db)
+    bcrypt.init_app(app)
+    jwt.init_app(app)
+    mail.init_app(app)
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
+        jti = jwt_payload["jti"]
+        from app.models.token_blocklist import TokenBlocklist
+        token = TokenBlocklist.query.filter_by(jti=jti).first()
+        return token is not None
+
+    # IMPORT BLUEPRINTS
+
+    # Auth
+    from app.controllers.user.user_controller import user_bp
+    from app.controllers.user_otp.user_otp_controller import otp_bp
+
+    # Core
+    from app.controllers.product.product_controller import product_bp
+    from app.routes.cart_routes import cart_bp
+    from app.controllers.order.place_order_controller import place_order_bp
+    from app.controllers.direct_order_message.direct_order_sms import direct_order_bp
+
+    # Dashboard
+    from app.controllers.dashboard.dashboard_controller import dashboard_bp
+    from app.controllers.page_viwers.page_viewers_controller import view_bp
+
+    # Content
+    from app.controllers.contact_info.contact_info_controller import contact_bp
+    from app.controllers.about.about_controller import about_bp
+    from app.controllers.freq_asked_qns.questions_controller import questions_bp
+
+    # Extra routes
+    from app.routes.auth_routes import auth_bp
+    from app.routes.chat_routes import chat_bp
+    from app.routes.inquiry_routes import inquiry_bp
+
+    # REGISTER BLUEPRINTS
+    blueprints = [
+        user_bp,
+        otp_bp,
+        product_bp,
+        cart_bp,
+        place_order_bp,
+        direct_order_bp,
+        dashboard_bp,
+        view_bp,
+        contact_bp,
+        about_bp,
+        questions_bp,
+        auth_bp,
+        chat_bp,
+        inquiry_bp,
+    ]
+
+    for bp in blueprints:
+        app.register_blueprint(bp)
+
+    # AUTO-CREATE MISSING TABLES
+    with app.app_context():
+        db.create_all()
+
+
+    # STATIC FILE ROUTE
+    @app.route("/static/uploads/<filename>")
+    def uploaded_file(filename):
+        return send_from_directory(
+            app.config["UPLOAD_FOLDER"],
+            filename
+        )
+
+    # HOME ROUTE
+    @app.route("/")
+    def home():
+        return {
+            "message": "Rubriq API is running 🚀",
+            "status": "success"
+        }
+
+    return app
+# from app.extensions import db,migrate,bcrypt,jwt
+# from flask_cors import CORS
+# from flask import send_from_directory
+# import os
+# from datetime import timedelta
+
+# # Register blue prints
+# from app.controllers.user.user_controller import user_bp
+# from app.controllers.product.product_controller import product_bp
+# from app.controllers.order.place_order_controller import place_order_bp
+# from app.controllers.direct_order_message.direct_order_sms import direct_order_bp
+# from app.controllers.dashboard.dashboard_controller import dashboard_bp
+# from app.controllers.page_viwers.page_viewers_controller import view_bp
+# from app.controllers.user_otp.user_otp_controller import otp_bp
+# # from app.controllers.order.analytics import analytics_bp
+# from app.controllers.contact_info.contact_info_controller import contact_bp
+# from app.controllers.about.about_controller import about_bp
+
+
+
+# #application factory function
+# def create_app():
+    
+#     #app instance
+#     app = Flask(__name__)
+#     app.config.from_object('config.Config')
+
+
+
+
+#      # Upload config
+#     UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
+#     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+#     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+
+#     print("Upload folder:", app.config['UPLOAD_FOLDER'])
+
+
+    
+
+#     #Configuration
+#     app.config['SECRET_KEY'] = 'super-secret-key'  # Needed by Flask
+#     app.config['JWT_SECRET_KEY'] = 'super-secret-jwt-key'  # Needed by Flask-JWT-Extended
+#     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=60) # for example, 60 minutes
+
+#     db.init_app(app)
+#     migrate.init_app(app,db)
+#     bcrypt.init_app(app)
+#     jwt.init_app(app)
+#     CORS(app,  supports_credentials=True)
+
+#     #Import the models
+
+#     from app.models.order.order_model import Order
+#     from app.models.order_item.order_item_model import OrderItem
+#     from app.models.product.product_model import Product
+#     from app.models.user.user_model import User
+#     from app.models.cart.cart_item_model import CartItem
+#     from app.models.user_otp.user_otp_model import UserOTP
+#     from app.models.direct_order_message.direct_order import Message
+#     from app.models.page_views.page_viewers_model import PageView
+#     from app.models.monthly_sales.monthly_sales import MonthlySalesPerformance
+#     from app.models.contact_info.contact_info_model import ContactInfo
+#     from app.models.about.about_model import AboutContent
+   
+
+
+#     # Register blueprints
+#     app.register_blueprint(user_bp)
+#     app.register_blueprint(product_bp)
+#     app.register_blueprint(dashboard_bp)
+#     app.register_blueprint(place_order_bp)
+#     app.register_blueprint(direct_order_bp)
+#     app.register_blueprint(view_bp)
+#     app.register_blueprint(otp_bp)
+#     # app.register_blueprint(analytics_bp)
+#     app.register_blueprint(contact_bp)
+#     app.register_blueprint(about_bp)
+
+
+
+
+#     @app.route('/static/uploads/<filename>')
+#     def uploaded_file(filename):
+#      return send_from_directory('static/uploads', filename)
+
+
+
+
+#     @app.route("/")
+#     def exam_page():
+#      return """
+#     <html>
+#     <head>
+#         <title>Exam Landing Page</title>
+#         <style>
+#             body {
+#                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+#                 background: linear-gradient(to right, #e0c3fc, #8ec5fc);
+#                 display: flex;
+#                 justify-content: center;
+#                 align-items: center;
+#                 height: 100vh;
+#                 margin: 0;
+#             }
+#             .container {
+#                 background: white;
+#                 padding: 40px;
+#                 border-radius: 16px;
+#                 box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+#                 text-align: center;
+#                 max-width: 600px;
+#             }
+#             h1 {
+#                 color: #6a0dad;
+#                 font-size: 2em;
+#                 margin-bottom: 20px;
+#             }
+#             p {
+#                 font-size: 1.1em;
+#                 color: #333;
+#             }
+#             .btn {
+#                 margin-top: 20px;
+#                 padding: 12px 24px;
+#                 font-size: 1em;
+#                 background-color: #6a0dad;
+#                 color: white;
+#                 border: none;
+#                 border-radius: 8px;
+#                 cursor: pointer;
+#                 text-decoration: none;
+#             }
+#             .btn:hover {
+#                 background-color: #530baf;
+#             }
+#         </style>
+#     </head>
+#     <body>
+#         <div class="container">
+#             <h1>🎉 Welcome to the Intermediate Python Exam</h1>
+#             <p>Congratulations, you have successfully launched the app!</p>
+#             <p>You may now embark on the exam. Stay focused and give it your best shot.</p>
+#             <a href="#" class="btn">Good Luck 💪🚀</a>
+#         </div>
+#     </body>
+#     </html>
+#     """
+
+
+ 
+    
+  
+    
+    
+
+#     return app
+
