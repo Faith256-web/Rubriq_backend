@@ -14,8 +14,7 @@ import os
 from flask_mail import Message
 import traceback
 import re  # For checking the number of digits
-from werkzeug.utils import secure_filename
-
+from app.utils.auth import is_valid_admin_code
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff'}
 
@@ -52,7 +51,7 @@ def register():
         return jsonify({'error': 'Phone number already registered'}), 409
 
     # Admin check
-    is_admin = admin_code == "Okumu@078@078"
+    is_admin = is_valid_admin_code(admin_code)
 
     # Hash password
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -127,10 +126,9 @@ def login():
 
     # If user IS admin, validate the secret code
     if user.is_admin:
-        ADMIN_SECRET_CODE = "Okumu@078@078"  # Ideally from environment variables
         if not admin_code:
             return jsonify({"error": "Secret code is required for admin login."}), 400
-        if admin_code != ADMIN_SECRET_CODE:
+        if not is_valid_admin_code(admin_code):
             return jsonify({"error": "Invalid secret code."}), 401
 
     # Create access token after successful checks

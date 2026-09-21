@@ -62,7 +62,7 @@ def update_qty():
 
 
 # REMOVE ITEM
-@cart_bp.delete("/remove/<int:product_id>")
+@cart_bp.delete("/remove/<product_id>")
 @jwt_required()
 def remove_item(product_id):
     user_id = int(get_jwt_identity())

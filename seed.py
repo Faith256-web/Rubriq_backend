@@ -1,3 +1,4 @@
+import os
 from app import create_app, db
 from app.models.product.product_model import Product
 from app.models.user.user_model import User
@@ -12,21 +13,29 @@ with app.app_context():
     User.query.delete()
     Product.query.delete()
 
+    superadmin_email = os.getenv("SUPERADMIN_EMAIL", "faithmercy256@gmail.com")
+    superadmin_phone = os.getenv("SUPERADMIN_PHONE", "0762823503")
+    superadmin_pass = os.getenv("SUPERADMIN_PASSWORD", "Tibagonzeka01")
+
+    admin_email = os.getenv("ADMIN_EMAIL", "info@rubriqafrica.com")
+    admin_phone = os.getenv("ADMIN_PHONE", "0700000002")
+    admin_pass = os.getenv("ADMIN_PASSWORD", "@Rubriq2026")
+
     # Seed Admin Users
     superadmin = User(
         name="Super Admin",
-        email="superadmin@rubriq.com",
-        phone="0700000001",
-        password=bcrypt.generate_password_hash("SuperAdmin123!").decode("utf-8"),
+        email=superadmin_email,
+        phone=superadmin_phone,
+        password=bcrypt.generate_password_hash(superadmin_pass).decode("utf-8"),
         is_admin=True,
         role="superadmin",
         is_verified=True
     )
     admin = User(
         name="Admin User",
-        email="admin@rubriq.com",
-        phone="0700000002",
-        password=bcrypt.generate_password_hash("Admin123!").decode("utf-8"),
+        email=admin_email,
+        phone=admin_phone,
+        password=bcrypt.generate_password_hash(admin_pass).decode("utf-8"),
         is_admin=True,
         role="admin",
         is_verified=True
@@ -86,8 +95,4 @@ with app.app_context():
         db.session.add(p)
 
     db.session.commit()
-    print("Database successfully seeded with 2 admin users and 5 products!")
-    print("\n--- SEEDED ACCOUNTS ---")
-    print("Superadmin: Phone = 0700000001, Email = superadmin@rubriq.com, Password = SuperAdmin123!, Secret Code = Okumu@078@078")
-    print("Admin: Phone = 0700000002, Email = admin@rubriq.com, Password = Admin123!, Secret Code = Okumu@078@078")
-    print("------------------------\n")
+    print("Database successfully seeded with admin users and products using environment configuration!")

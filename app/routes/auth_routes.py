@@ -8,7 +8,7 @@ from app.models.auth_logs import AuthLog
 from app.extensions import db
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt, get_jwt_identity
 from datetime import datetime, timedelta
-import random
+from app.utils.auth import is_valid_admin_code
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -227,11 +227,10 @@ def login():
     if user and user.check_password(password):
         # Check admin secret code if they are admin
         if user.is_admin:
-            ADMIN_SECRET_CODE = "Okumu@078@078"
             if not admin_code:
                 log_auth(user_id=user.id, identifier=identifier, is_success=False)
                 return jsonify({"message": "Secret code is required for admin login."}), 401
-            if admin_code != ADMIN_SECRET_CODE:
+            if not is_valid_admin_code(admin_code):
                 log_auth(user_id=user.id, identifier=identifier, is_success=False)
                 return jsonify({"message": "Invalid secret code."}), 401
         
